@@ -42,7 +42,7 @@ void sendDataTo(const uint8_t *mac_addr, uint8_t command, uint8_t *theData)
 {
    *myData.sender_MAC_addr = *myMAC_Address;
     myData._command = command; // register it to controller
-    *myData.a = *theData;
+   // *myData.a = *theData;
     // strcpy(myData.a, "A DATA TO RECIVE");
     // myData.b = random(1,20);
     // myData.c = 1.2;

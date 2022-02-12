@@ -7,6 +7,9 @@
 #include <Wire.h>
 #include <SPI.h>
 
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <display.h>
 
