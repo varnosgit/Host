@@ -48,3 +48,10 @@ void display_log_print(const String &s)
   logtxt1.pushSprite(0, 0);
   logtxt1.scroll(0,-16);
 }
+
+// void display_log_print(const char *s)
+// {
+//   logtxt1.drawString(s, 0, 240, 2);
+//   logtxt1.pushSprite(0, 0);
+//   logtxt1.scroll(0,-16);
+// }
