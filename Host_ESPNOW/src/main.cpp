@@ -1,4 +1,5 @@
-// Import required libraries
+#include <Arduino.h>
+#include <SPIFFS.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -6,7 +7,7 @@
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <display.h>
 
-#include "webpage1.h"
+// #include "webpage1.h"
 
 // Replace with your network credentials
 const char* ssid = "Varnos5";
@@ -31,6 +32,20 @@ void coreZEROTasks_code( void * pvParameters ){
   } 
 }
 
+
+String processor(const String& var){
+  Serial.println(var);
+  if(var == "STATE"){
+    if (ledState){
+      return "ON";
+    }
+    else{
+      return "OFF";
+    }
+  }
+  return String();
+}
+
 void notifyClients() {
   ws.textAll(String(ledState));
 }
@@ -41,6 +56,12 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     data[len] = 0;
     if (strcmp((char*)data, "toggle") == 0) {
       ledState = !ledState;
+      tft.fillRect(0, 0, 150, 50, ledState ? TFT_GREEN : TFT_BLACK);
+      notifyClients();
+    }
+    if (strcmp((char*)data, "newp") == 0) {
+      ledState = !ledState;
+      tft.fillRect(0, 0, 150, 50, ledState ? TFT_RED : TFT_BLACK);
       notifyClients();
     }
   }
@@ -69,21 +90,12 @@ void initWebSocket() {
   server.addHandler(&ws);
 }
 
-String processor(const String& var){
-  Serial.println(var);
-  if(var == "STATE"){
-    if (ledState){
-      return "ON";
-    }
-    else{
-      return "OFF";
-    }
-  }
-  return String();
-}
+
 
 void setup(){
   display_init();
+  SPIFFS.begin(true);
+
   display_log_init();   display_log_print("Initialising...");
   delay(100); Serial.begin(115200);   display_log_print("Serial Debug connect!");
   logtxt1.drawNumber(getCpuFrequencyMhz(), 71, 240, 2);
@@ -105,23 +117,56 @@ void setup(){
   
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
+  int con_counter = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
+    con_counter++;
     Serial.println("Connecting to WiFi.."); display_log_print("Connecting to WiFi..");
+    if (con_counter > 4) ESP.restart();
   }
 
   // Print ESP Local IP Address
-  Serial.println(WiFi.localIP()); display_log_print(WiFi.localIP().toString());
+  Serial.println(WiFi.localIP()); display_log_print("IP: " + WiFi.localIP().toString());
 
   initWebSocket();
 
   // Route for root / web page
+  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  //   request->send_P(200, "text/html", index_html, processor);
+  // });
+
+    // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/html", index_html, processor);
+    request->send(SPIFFS, "/_index.html", String(), false, processor);
+  });
+  
+  // Route to load style.css file
+  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/style.css", "text/css");
+  });
+
+    // Route to load style.css file
+  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/script.js", "text/javascript");
   });
 
   // Start server
   server.begin();
+
+
+
+  File file = SPIFFS.open("/test.txt");
+  if(!file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  
+  Serial.println("File Content:");
+  while(file.available()){
+    Serial.write(file.read());
+  }
+  file.close();
+
 }
 
 void loop() {
