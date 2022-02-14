@@ -7,7 +7,7 @@ extern TFT_eSprite logtxt1;
 void display_init(void)
 {
     tft.init();
-    // tft.setRotation(1);
+    tft.setRotation(2);
     tft.setSwapBytes(true);
 
     tft.fillScreen(TFT_BLACK);
