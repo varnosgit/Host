@@ -19,13 +19,16 @@ extern AsyncWebSocket ws;
 
 
 void setup(){
-  display_init();
+  //////////////////////////////////////////// inits
   Serial.begin(115200);
   SPIFFS.begin(true);
-
+  display_init();
+  display_log_init();
+  ////////////////////////////////////////// defualt values
+  display_log_print("Initialising...");
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
-  
+ ////////////////////////////////////////// wifi & webpage setups 
   wifi_initial();
   initWebSocket();
   setup_webpages();

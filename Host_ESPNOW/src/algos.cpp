@@ -14,7 +14,7 @@ int dooble(int x)
 //   } 
 // }
 
-//  display_log_init();   display_log_print("Initialising...");
+
 //   delay(100);    display_log_print("Serial Debug connect!");
 //   logtxt1.drawNumber(getCpuFrequencyMhz(), 71, 240, 2);
 //   delay(300); display_log_print("CPU Freq.:     MHz");

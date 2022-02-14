@@ -25,6 +25,37 @@ void wifi_initial(void)
   // Print ESP Local IP Address
   Serial.println(WiFi.localIP()); display_log_print("IP: " + WiFi.localIP().toString());
 }
+
+void setup_webpages(void)
+{
+    // Route for root / web page
+  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  //   request->send_P(200, "text/html", index_html, processor);
+  // });
+
+      // Route for root / web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/_index.html", String(), false, processor);
+  });
+  
+  // Route to load style.css file
+  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/style.css", "text/css");
+  });
+
+    // Route to load style.css file
+  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/script.js", "text/javascript");
+  });
+
+      // Route for root / web page
+  server.on("/sec.html", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/sec.html", String(), false, processor);
+  });
+  // Start server
+  server.begin();
+}
+
 String processor(const String& var){
   Serial.println(var);
   if(var == "STATE"){
@@ -85,32 +116,3 @@ void initWebSocket() {
   server.addHandler(&ws);
 }
 
-void setup_webpages(void)
-{
-    // Route for root / web page
-  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-  //   request->send_P(200, "text/html", index_html, processor);
-  // });
-
-      // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/_index.html", String(), false, processor);
-  });
-  
-  // Route to load style.css file
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/style.css", "text/css");
-  });
-
-    // Route to load style.css file
-  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/script.js", "text/javascript");
-  });
-
-      // Route for root / web page
-  server.on("/sec.html", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/sec.html", String(), false, processor);
-  });
-  // Start server
-  server.begin();
-}
