@@ -10,8 +10,8 @@
 // #include "webpage1.h"
 
 // Replace with your network credentials
-const char* ssid = "Varnos5";
-const char* password = "toolesag";
+const char* ssid = "Hanisa";
+const char* password = "1qaz!QAZ";
 
 bool ledState = 0;
 const int ledPin = 2;
@@ -46,8 +46,11 @@ String processor(const String& var){
   return String();
 }
 
-void notifyClients() {
+void notifyClients(int dd) {
+  if (dd)
   ws.textAll(String(ledState));
+  else
+  ws.textAll("2");
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
@@ -57,12 +60,12 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     if (strcmp((char*)data, "toggle") == 0) {
       ledState = !ledState;
       tft.fillRect(0, 0, 150, 50, ledState ? TFT_GREEN : TFT_BLACK);
-      notifyClients();
+      notifyClients(0);
     }
     if (strcmp((char*)data, "newp") == 0) {
       ledState = !ledState;
       tft.fillRect(0, 0, 150, 50, ledState ? TFT_RED : TFT_BLACK);
-      notifyClients();
+      notifyClients(1);
     }
   }
 }
@@ -150,6 +153,10 @@ void setup(){
     request->send(SPIFFS, "/script.js", "text/javascript");
   });
 
+      // Route for root / web page
+  server.on("/sec.html", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/sec.html", String(), false, processor);
+  });
   // Start server
   server.begin();
 
