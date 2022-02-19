@@ -1,7 +1,8 @@
 #include "wireless_host.h"
 
 // const char* ssid = "HUAWEI-2.4G-g4ci"; const char* password = "db7nf4dk";
-const char* ssid = "artin123"; const char* password = "Smartartin123";
+// const char* ssid = "artin123"; const char* password = "Smartartin123";
+const char* ssid = "Varnos5"; const char* password = "toolesag";
 
 extern bool ledState;
 extern const int ledPin;
@@ -58,7 +59,8 @@ void setup_webpages(void)
 }
 
 String processor(const String& var){
-  Serial.println(var);
+  Serial.print("processor: "); Serial.println(var);
+  ws.textAll(String(ledState));
   if(var == "STATE"){
     if (ledState){
       return "ON";
@@ -75,6 +77,7 @@ void notifyClients(int dd) {
   ws.textAll(String(ledState));
   else
   ws.textAll("2");
+  Serial.println("ssssssaaaaaaaaaagg");
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
@@ -91,6 +94,9 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
       tft.fillRect(0, 0, 150, 50, ledState ? TFT_RED : TFT_BLACK);
       notifyClients(1);
     }
+    else
+      Serial.println((char*)data);
+       ws.textAll((char*)data);
   }
 }
 
