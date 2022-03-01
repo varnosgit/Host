@@ -4,50 +4,38 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
-#include <display.h>
-#include <wireless_host.h>
+#include "wireless_host.h"
+#include "host_control.h"
 
-bool ledState = 0;
-const int ledPin = 2;
-TaskHandle_t CoreZEROTasks;
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite logtxt1 = TFT_eSprite(&tft); // Sprite object stext1
-
-char rxdata[5];
+extern hc_message hc_mesg;
+extern uint8_t hc_sendFlag;
+extern uint8_t hc_recvFlag;
 
 extern AsyncWebServer server;
 extern AsyncWebSocket ws;
 
+bool ledState = 0;
+const int ledPin = 2;
+TaskHandle_t CoreZEROTasks;
+
 void coreZEROTasks_code( void * parameter) {
   for(;;) {
-
-    delay(500);
-    // Serial2.write("12345");
-    // if (Serial2.available()) 
-    // {
-    //   Serial2.read(rxdata, 5);
-    //   Serial.println(rxdata);
-    // }
-    
-    // delay(50);
-    // byte n = Serial2.available();  //3:
-    //  if(n != 0) //4:
-    //  {           
-    //      byte m = Serial.readBytesUntil('\n', rxdata, 5);  //5:
-    //      rxdata[m] = '\0';  //6:
-    //      Serial.print(String(rxdata)); Serial.println("rxdata");//7:
-    //  }
+    if (hc_sendFlag)
+      send_data_to_controller();
+    if (receive_data_from_controller())
+      hc_recvFlag = 1;
+    if (hc_recvFlag)
+      handle_controller_message();
+    delay(2000);
   }
 }
 
 void setup(){
   //////////////////////////////////////////// inits
-  Serial.begin(115200);   Serial2.begin(115200);
-  SPIFFS.begin(true);
-  // display_init();  display_log_init();   display_log_print("Initializing...");
+  Serial.begin(115200);  
+  Serial2.begin(115200);
+  SPIFFS.begin(true); 
   ////////////////////////////////////////// defualt values
-
   Serial.print("Initializing...");
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
@@ -55,7 +43,7 @@ void setup(){
   wifi_initial();
   initWebSocket();
   setup_webpages();
-
+ ////////////////////////////////////////// second core initial
   xTaskCreatePinnedToCore(
                   coreZEROTasks_code,      /* Task function. */
                   "Task1",        /* name of task. */
@@ -66,9 +54,9 @@ void setup(){
                   0);   
 }
 
-
+int clean_counter = 0; 
 void loop() {
-  delay(1000);
-  ws.cleanupClients();
+  delay(100);
+  if (clean_counter++ == 20) { ws.cleanupClients(); clean_counter = 0;}
   digitalWrite(ledPin, ledState);
 }

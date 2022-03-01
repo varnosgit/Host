@@ -1,7 +1,8 @@
+#include <ESPmDNS.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <display.h>
+#include <SPIFFS.h>
 
 void wifi_initial();
 void initWebSocket();
