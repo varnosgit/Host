@@ -92,9 +92,13 @@ input[type='radio']{
    }
    
     .button2 {
+		font-size: 1.5rem;
+    font-weight: bold;
+    color: #143642;
+	
 	margin: 2%;
 	 padding: 50px 50px;
-	 font-size: 24px;
+	 --font-size: 24px;
    --  background-color: #2f8bad;
      box-shadow: 2 2px #CDCDCD;
      transform: translateY(2px);

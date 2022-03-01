@@ -1,12 +1,17 @@
+#include "Arduino.h"
 #include "wireless_host.h"
 #include "host_control.h"
+#include "zones.h"
 
 
-// const char* ssid = "HUAWEI-2.4G-g4ci"; const char* password = "db7nf4dk";
-// const char* ssid = "artin123"; const char* password = "Smartartin123";
-const char* ssid = "Varnos5"; const char* password = "toolesag";
+//const char* ssid = "HUAWEI-2.4G-g4ci"; const char* password = "db7nf4dk";
+const char* ssid = "artin123"; const char* password = "Smartartin123";
+//const char* ssid = "Varnos5"; const char* password = "toolesag";
+//const char* ssid = "Hanisa"; const char* password = "1qaz!QAZ";
 String hostname = "HVAC Server";
 
+extern struct systemZone zones[10];
+extern uint8_t modeStat, fanStat;
 extern bool ledState;
 extern const int ledPin;
 // Create AsyncWebServer object on port 80
@@ -15,7 +20,7 @@ AsyncWebSocket ws("/ws");
 
 void wifi_initial(void)
 {
-
+  zone_reload();
   WiFi.mode(WIFI_STA);
   WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
   WiFi.setHostname(hostname.c_str()); //define hostname
@@ -105,9 +110,16 @@ String processor(const String& var){
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) 
 {
+  String zoneNames;
   switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+     // ws.textAll("salam, khodafez");
+     modeStat = 1; fanStat = 12;
+     //zoneNames =  String(modeStat) + String(fanStat) + String(zones[0].name) +  String(",") + String(zones[1].name); 
+     zoneNames =  String(zones[0].name) +  String(",") + String(zones[1].name); 
+
+      ws.text(client->id(), zoneNames);
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -141,6 +153,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     else
       // Serial.println((char*)data);
       ws.textAll((char*)data);
+     // ws.textAll("salam, khodafez");
   }
 }
 

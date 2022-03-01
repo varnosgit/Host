@@ -20,6 +20,8 @@ currentTime();
   var gateway = `ws://${window.location.hostname}/ws`;
   var websocket;
   window.addEventListener('load', onLoad);
+  
+
 
 function showHome() {
  /* var x = document.getElementById("homee");
@@ -50,12 +52,16 @@ function showZone() {
   }
   function onOpen(event) {
     console.log('Connection opened');
+
   }
   function onClose(event) {
     console.log('Connection closed');
     setTimeout(initWebSocket, 2000);
   }
   function onMessage(event) {
+	    //let text = event.data;
+	    const myArray = event.data.split(",");
+		myArray.forEach(addZones);
 	  /*
 		var state;
 		if (event.data == "1"){
@@ -77,9 +83,27 @@ function showZone() {
    // document.getElementById('state').innerHTML = state;
 
   }
+  
+  function addZones(item) {
+	    var myDiv = document.getElementById("ezones");
+		let btn = document.createElement("button");
+		myDiv.appendChild(btn);
+		btn.innerHTML = item;
+		btn.classList.add('button2');
+		btn.onclick = function () {
+			//alert("Button is clicked");
+			window.location = "./myzone.html" + "?name=" + item; 
+			};
+		//btn.onclick = "./myzone.html"
+		//document.body.appendChild(btn);
+		
+		
+		//document.getElementById('z1').innerHTML = item;
+}
   function onLoad(event) {
 	var x = document.getElementById("zones");
-	x.style.display = "none";
+	
+		x.style.display = "none";
     initWebSocket();
     initButton();
   }
@@ -101,3 +125,22 @@ function showZone() {
 	//alert('Horray! Someone wrote "' + this.id + '"!');
   }
   
+  function parseURLParams(url) {
+    var queryStart = url.indexOf("?") + 1,
+        queryEnd   = url.indexOf("#") + 1 || url.length + 1,
+        query = url.slice(queryStart, queryEnd - 1),
+        pairs = query.replace(/\+/g, " ").split("&"),
+        parms = {}, i, n, v, nv;
+
+    if (query === url || query === "") return;
+
+    for (i = 0; i < pairs.length; i++) {
+        nv = pairs[i].split("=", 2);
+        n = decodeURIComponent(nv[0]);
+        v = decodeURIComponent(nv[1]);
+
+        if (!parms.hasOwnProperty(n)) parms[n] = [];
+        parms[n].push(nv.length === 2 ? v : null);
+    }
+    return parms;
+}

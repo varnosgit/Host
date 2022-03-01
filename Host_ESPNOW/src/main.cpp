@@ -1,11 +1,15 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
+#include <FS.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+
 #include "wireless_host.h"
 #include "host_control.h"
+
+
 
 extern hc_message hc_mesg;
 extern uint8_t hc_sendFlag;
@@ -13,6 +17,8 @@ extern uint8_t hc_recvFlag;
 
 extern AsyncWebServer server;
 extern AsyncWebSocket ws;
+
+uint8_t modeStat = 0, fanStat = 0;
 
 bool ledState = 0;
 const int ledPin = 2;
