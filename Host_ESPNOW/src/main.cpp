@@ -27,13 +27,10 @@ TaskHandle_t CoreZEROTasks;
 
 void coreZEROTasks_code( void * parameter) {
   for(;;) {
-    if (hc_sendFlag)
-      send_data_to_controller();
-    if (receive_data_from_controller())
-      hc_recvFlag = 1;
-    if (hc_recvFlag)
-      handle_controller_message();
-    delay(2000);
+    if (hc_sendFlag) send_data_to_controller();
+    if (receive_data_from_controller()) hc_recvFlag = 1;
+    if (hc_recvFlag) handle_controller_message();
+    delay(4);
   }
 }
 
@@ -64,8 +61,8 @@ void setup(){
 
 int clean_counter = 0; 
 void loop() {
-  delay(100);
-  if (clean_counter++ == 20) { ws.cleanupClients(); clean_counter = 0;}
+  delay(10);
+  if (clean_counter++ == 200) { ws.cleanupClients(); clean_counter = 0;}
   digitalWrite(ledPin, ledState);
 }
 
