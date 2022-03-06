@@ -24,12 +24,6 @@ currentTime();
 
 
 function showHome() {
- /* var x = document.getElementById("homee");
-  if (x.style.display === "none") {
-    x.style.display = "block";
-  } else {
-    x.style.display = "none";
-  }*/
   var x = document.getElementById("zones");
   x.style.display = "none";
   x = document.getElementById("homee");
@@ -61,7 +55,8 @@ function showZone() {
   function onMessage(event) {
 	    //let text = event.data;
 	    const myArray = event.data.split(",");
-		myArray.forEach(addZones);
+		if (myArray[0] == "Zone Names")
+			myArray.forEach(addZones);
 	  /*
 		var state;
 		if (event.data == "1"){
@@ -84,7 +79,8 @@ function showZone() {
 
   }
   
-  function addZones(item) {
+  function addZones(item, index) {
+		if (index < 1) return;
 	    var myDiv = document.getElementById("ezones");
 		let btn = document.createElement("button");
 		myDiv.appendChild(btn);
@@ -102,10 +98,11 @@ function showZone() {
 }
   function onLoad(event) {
 	var x = document.getElementById("zones");
-	
-		x.style.display = "none";
+	x.style.display = "none";
     initWebSocket();
     initButton();
+	mydata = parseURLParams(window.location.href);
+	if (mydata['name'] == 'zone') showZone();
   }
   function initButton() {
    // document.getElementById('button').addEventListener('click', toggle);
@@ -144,3 +141,4 @@ function showZone() {
     }
     return parms;
 }
+

@@ -15,21 +15,16 @@
 
 <h3 id="ZN"; style="text-align: left; padding-left:50px; font-size: 2.8rem; margin-top: 0">Zone Name?</h3>
 
-<div id="edevs">
-	<!--
-	<a href="./vent.html"><button style="padding:30px; margin:30px;"><h2>Device 1 - Vent</h2></button></a>
-	<a href="./termo.html"><button style="padding:30px; margin:30px;"><h2>Device 2 - Termostat</h2></button></a>
-	!-->
-</div>	
-
 <div>
 	<a href="./index.html?name=zone">
 	<button id="delZ" style="padding:30px; margin:30px;"><h2>Delete Zone</h2></button>
 	</a>
-	<button id="add_dev" style="padding:30px; margin:30px;"><h2>Add Device</h2></button>
-	<p id="add_mesg"></p>
+	<button style="padding:30px; margin:30px;"><h2>Add Device</h2></button>
 </div>	
-
+<div>
+	<a href="./vent.html"><button style="padding:30px; margin:30px;"><h2>Device 1 - Vent</h2></button></a>
+	<a href="./termo.html"><button style="padding:30px; margin:30px;"><h2>Device 2 - Termostat</h2></button></a>
+</div>	
 
 <script>
  	mydata = parseURLParams(window.location.href);
@@ -58,36 +53,17 @@ function onClose(event) {
     setTimeout(initWebSocket, 2000);
   }
 function onMessage(event) {
-	const myArray = event.data.split(",");
-	if (myArray[0] == "Add Device")
-	{
-	 document.getElementById('add_mesg').innerHTML = "";
-		var myDiv = document.getElementById("edevs");
-		let btn = document.createElement("button");
-		myDiv.appendChild(btn);
-		btn.innerHTML = myArray[1];
-		btn.classList.add('button2');
-		btn.onclick = function () 
-		{
-			window.location = myArray[2] + "?name=" + myArray[3]; 
-		};
-	}
+	    const myArray = event.data.split(",");
   }
   
  
   document.getElementById('delZ').addEventListener('click', deleteZone_command);
-  document.getElementById('add_dev').addEventListener('click', addDev_command);
-  
-  
 function deleteZone_command(){
 console.log('deleteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
 	  var xname = document.getElementById("ZN").innerHTML;
 	   websocket.send("Delete Zone," + xname);
   }
-function addDev_command(){
-	  document.getElementById('add_mesg').innerHTML = "please 3 sec.";
-	   websocket.send("Search Device,");
-  }	
+	
 function parseURLParams(url) {
     var queryStart = url.indexOf("?") + 1,
         queryEnd   = url.indexOf("#") + 1 || url.length + 1,

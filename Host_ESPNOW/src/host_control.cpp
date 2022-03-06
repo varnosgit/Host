@@ -1,8 +1,13 @@
 #include "host_control.h"
+#include "zones.h"
+#include "wireless_host.h"
 
+extern const uint8_t numOfMaxZones;
+extern systemZone zones[];;
 hc_message hc_mesg;
 uint8_t hc_sendFlag = 0, hc_recvFlag = 0;
 
+// this 3 below functions must run on the second core
 void send_data_to_controller(void)
 {
     hc_mesg.begin_validator[0] = 'V';
@@ -44,11 +49,55 @@ void handle_controller_message(void)
 
 }
 
-void handle_host_message(uint8_t *data, size_t len)
+
+////////////////////////////////////////////////////////////////////////////////////
+void handle_host_message(char *data, size_t len)
 {
-    Serial.print("data from browser: ");
-    Serial.printf((char *)data);
-    Serial.println("");
+    Serial.print("data from browser: ");Serial.printf((char *)data);Serial.println("");
+
+    String mydata = String(data);
+    String strs[20];
+    int StringCount = 0;
+    // interpret data from web
+    while (mydata.length() > 0)
+    {
+        int index = mydata.indexOf(',');
+        if (index == -1) // No seperator found
+        {
+            strs[StringCount++] = mydata;
+            break;
+        }
+        else
+        {
+            strs[StringCount++] = mydata.substring(0, index);
+            mydata = mydata.substring(index+1);
+        }
+    }
+    // print data from web to serial
+    for (int i = 0; i < StringCount; i++) {
+        Serial.print(i);  Serial.print(": \"");    Serial.print(strs[i]);    Serial.println("\"");  }
+
+
+    if (strs[0] == "Add New Zone")
+    {
+        Serial.println("adding new zone...");
+        add_new_zone(strs[1], strs[2]);
+    }
+    if (strs[0] == "Delete Zone")
+    {
+        Serial.println("deleting a zone...");
+        delete_zone(strs[1]);
+    }
+     if (strs[0] == "Search Device")
+    {
+        Serial.println("search for paring a new device...");
+        hc_mesg.command = 0x03;
+        hc_sendFlag = 1;
+
+        String newDev;
+        newDev = "Add Device,Device 1- vent,./vent.html,ventName";
+        notifyClients_txt(newDev);
+    }
 
     hc_mesg.command = 0x03;
     if (strcmp((char*)data, "auto") == 0) 
@@ -71,5 +120,7 @@ void handle_host_message(uint8_t *data, size_t len)
     {
         hc_mesg.data[0] = 5;
     }
+
+
     hc_sendFlag = 1;
 }

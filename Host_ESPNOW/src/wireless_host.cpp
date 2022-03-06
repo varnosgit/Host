@@ -5,12 +5,12 @@
 
 
 //const char* ssid = "HUAWEI-2.4G-g4ci"; const char* password = "db7nf4dk";
-const char* ssid = "artin123"; const char* password = "Smartartin123";
-//const char* ssid = "Varnos5"; const char* password = "toolesag";
+//const char* ssid = "artin123"; const char* password = "Smartartin123";
+const char* ssid = "Varnos5"; const char* password = "toolesag";
 //const char* ssid = "Hanisa"; const char* password = "1qaz!QAZ";
 String hostname = "HVAC Server";
 
-extern struct systemZone zones[10];
+extern systemZone zones[];
 extern uint8_t modeStat, fanStat;
 extern bool ledState;
 extern const int ledPin;
@@ -20,18 +20,16 @@ AsyncWebSocket ws("/ws");
 
 void wifi_initial(void)
 {
-  zone_reload();
-  WiFi.mode(WIFI_STA);
-  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
-  WiFi.setHostname(hostname.c_str()); //define hostname
-
+  //WiFi.mode(WIFI_STA);
+  // WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+  // WiFi.setHostname(hostname.c_str()); //define hostname
 
       // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   int con_counter = 0;
   while (WiFi.status() != WL_CONNECTED) 
   {
-    delay(1000);
+    delay(2000);
     con_counter++;
     Serial.println("Connecting to WiFi..");
     if (con_counter > 4) ESP.restart();
@@ -53,7 +51,8 @@ void setup_webpages(void)
   // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
   //   request->send_P(200, "text/html", index_html, processor);
   // });
-      // Route for root / web page
+
+    //  Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.html", String(), false, processor);
   });
@@ -61,14 +60,17 @@ void setup_webpages(void)
   server.on("/index.html", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.html", String(), false, processor);
   });
-  // Route to load style.css file
+      // Route to load style.css file
   server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/style.css", "text/css");
   });
-    // Route to load style.css file
-  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/script.js", "text/javascript");
+    // Route to load script.js file
+  server.on("/sct_home.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/sct_home.js", "text/javascript");
   });
+
+
+
       // Route for root / web page
   server.on("/addzone.html", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/addzone.html", String(), false, processor);
@@ -85,6 +87,9 @@ void setup_webpages(void)
   server.on("/termo.html", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/termo.html", String(), false, processor);
   });
+
+
+
   // Start server
   server.begin();
 }
@@ -110,16 +115,11 @@ String processor(const String& var){
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) 
 {
-  String zoneNames;
+  //String zoneNames;
   switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-     // ws.textAll("salam, khodafez");
-     modeStat = 1; fanStat = 12;
-     //zoneNames =  String(modeStat) + String(fanStat) + String(zones[0].name) +  String(",") + String(zones[1].name); 
-     zoneNames =  String(zones[0].name) +  String(",") + String(zones[1].name); 
-
-      ws.text(client->id(), zoneNames);
+      ws.text(client->id(), get_zone_names());
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -138,21 +138,29 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
 
-    handle_host_message(data, len);
+    handle_host_message((char *)data, len);
 
     if (strcmp((char*)data, "toggle") == 0) {
       ledState = !ledState;
+      Serial.println((char*)data);
       //tft.fillRect(0, 0, 150, 50, ledState ? TFT_GREEN : TFT_BLACK);
-      notifyClients(0);
+      //notifyClients(0);
+    }
+
+    if (strcmp((char*)data, "toggle") == 0) {
+      ledState = !ledState;
+      Serial.println((char*)data);
+      //tft.fillRect(0, 0, 150, 50, ledState ? TFT_GREEN : TFT_BLACK);
+      //notifyClients(0);
     }
     if (strcmp((char*)data, "newp") == 0) {
       ledState = !ledState;
       //tft.fillRect(0, 0, 150, 50, ledState ? TFT_RED : TFT_BLACK);
       notifyClients(1);
     }
-    else
+    //else
       // Serial.println((char*)data);
-      ws.textAll((char*)data);
+      //ws.textAll((char*)data);
      // ws.textAll("salam, khodafez");
   }
 }
@@ -165,5 +173,7 @@ void notifyClients(int dd) {
   Serial.println("ssssssaaaaaaaaaagg");
 }
 
-
+void notifyClients_txt(String txt) {
+  ws.textAll(txt);
+}
 

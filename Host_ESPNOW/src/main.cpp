@@ -4,10 +4,11 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-
+#include <Effortless_SPIFFS.h>
 
 #include "wireless_host.h"
 #include "host_control.h"
+#include "zones.h"
 
 
 
@@ -46,6 +47,7 @@ void setup(){
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
  ////////////////////////////////////////// wifi & webpage setups 
+  zone_reload();
   wifi_initial();
   initWebSocket();
   setup_webpages();
@@ -66,3 +68,9 @@ void loop() {
   if (clean_counter++ == 20) { ws.cleanupClients(); clean_counter = 0;}
   digitalWrite(ledPin, ledState);
 }
+
+//cool 1
+//cool 2
+//heat 1
+//heat 2
+//fan --> on/auto

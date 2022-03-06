@@ -15,4 +15,4 @@ typedef struct hc_message { //16 character
 void send_data_to_controller(void);
 bool receive_data_from_controller(void);
 void handle_controller_message(void);
-void handle_host_message( uint8_t *data, size_t len);
+void handle_host_message( char *data, size_t len);

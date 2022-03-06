@@ -14,6 +14,7 @@ typedef struct termoDev { //16 character
 
 typedef struct systemZone { //16 character
   char name[16]= "no Name";
+  char icon[16]= "no icon";
   bool isActive = 0;
   uint8_t numOf;
   termoDev termos[10];
@@ -21,3 +22,6 @@ typedef struct systemZone { //16 character
 };
 
 void zone_reload(void);
+String get_zone_names(void);
+uint8_t add_new_zone(String name, String icon);
+uint8_t delete_zone(String name);
