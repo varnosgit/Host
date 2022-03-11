@@ -19,7 +19,7 @@ typedef struct hc_message {
                     // 1 = cont.: introduce controller to host (reciver macAdd = controller MAC Add)
                     // 2 = cont.: reserved
                     // 3 = cont.: this is a message from a device (sender mac address)
-                    // 4 = host: pair a device with reciever MAC Add
+                    // 4 = host: pair a device with sender MAC Add
                     // 5 = host: unpair this device with reciever MAC Add if any
                     // 6 = host: directly send this message to a device with reciever MAC Add
   uint8_t end_validator;
