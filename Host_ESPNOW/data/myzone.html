@@ -28,12 +28,15 @@
 	</a>
 	<button id="add_dev" style="padding:30px; margin:30px;"><h2>Add Device</h2></button>
 	<p id="add_mesg"></p>
+	<img id="loadgif" src="loading.gif" alt="loading ..." style="width:48px;height:48px;">
 </div>	
 
 
 <script>
  	mydata = parseURLParams(window.location.href);
 	document.getElementById('ZN').innerHTML = mydata['name'];
+	document.getElementById("loadgif").style.visibility = "hidden";
+	
 	
 	var gateway = `ws://${window.location.hostname}/ws`;
 	var websocket;
@@ -63,6 +66,8 @@ function onMessage(event) {
 	if (myArray[0] == "Add Device")
 	{
 		document.getElementById('add_mesg').innerHTML = "";
+		document.getElementById("loadgif").style.visibility = "hidden";
+		
 		var myDiv = document.getElementById("edevs");
 		let btn = document.createElement("button");
 		myDiv.appendChild(btn);
@@ -70,7 +75,9 @@ function onMessage(event) {
 		btn.classList.add('button2');
 		btn.onclick = function () 
 		{
-			window.location = myArray[2] + "?name=" + myArray[3]; 
+			window.location = "./device.html" + "?zonename=" +
+										document.getElementById('ZN').innerHTML
+										+ "&devname=" + myArray[1]; 
 		};
 	}
 	if (myArray[0] == "Device Names")
@@ -92,7 +99,9 @@ function add_device_bottom(item, index){
 		btn.classList.add('button2');
 		btn.onclick = function () 
 		{
-			window.location = myArray[2] + "?name=" + myArray[3]; 
+			window.location = "./device.html" + "?zonename=" +
+										document.getElementById('ZN').innerHTML
+										+ "&devname=" + item; 
 		};
   }
   
@@ -103,6 +112,7 @@ console.log('deleteeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
   }
 function addDev_command(){
 	  document.getElementById('add_mesg').innerHTML = "please 3 sec.";
+	  document.getElementById("loadgif").style.visibility = "visible";
 	   websocket.send("Search Device," + document.getElementById('ZN').innerHTML);
   }	
 function parseURLParams(url) {
@@ -129,6 +139,6 @@ function parseURLParams(url) {
 	
 </script>
 
-<!--><script type="text/javascript" src="script.js"></script> </!-->
+<!--<script type="text/javascript" src="script.js"></script> </!-->
 </body>
 </html>

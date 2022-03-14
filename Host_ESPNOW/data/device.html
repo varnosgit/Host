@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="topnav">
-    <h1>Termostat</h1>
+    <h1 id="ZM">Termostat</h1>
   </div>
 
 
@@ -34,7 +34,8 @@
 
 <script>
  	myURL_param = parseURLParams(window.location.href);
-	document.getElementById('ZN').innerHTML = myURL_param['zonename'] + ":" + myURL_param['devname'];
+	document.getElementById('ZM').innerHTML = myURL_param['zonename'];
+	document.getElementById('ZN').innerHTML = myURL_param['devname'];
 	
 	var gateway = `ws://${window.location.hostname}/ws`;
 	var websocket;

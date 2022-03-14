@@ -28,4 +28,4 @@ typedef struct hc_message {
 void send_data_to_controller(void);
 bool receive_data_from_controller(void);
 void handle_controller_message(void);
-void handle_host_message( char *data, size_t len);
+void handle_browser_message( char *data, size_t len);

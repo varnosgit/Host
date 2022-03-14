@@ -10,6 +10,8 @@ const char* ssid = "Varnos5"; const char* password = "toolesag";
 //const char* ssid = "Hanisa"; const char* password = "1qaz!QAZ";
 String hostname = "HVAC Server";
 
+IPAddress localIp;
+extern uint8_t pair_request_flag;
 extern systemZone zones[];
 extern uint8_t modeStat, fanStat;
 extern bool ledState;
@@ -43,6 +45,7 @@ void wifi_initial(void)
 
   // Print ESP Local IP Address
   Serial.println(WiFi.localIP()); //display_log_print("IP: " + WiFi.localIP().toString());
+  localIp = WiFi.localIP();
 }
 
 void setup_webpages(void)
@@ -79,6 +82,10 @@ void setup_webpages(void)
   server.on("/myzone.html", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/myzone.html", String(), false, processor);
   });
+            // Route for root / web page
+  server.on("/device.html", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/device.html", String(), false, processor);
+  });
           // Route for root / web page
   server.on("/vent.html", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/vent.html", String(), false, processor);
@@ -88,7 +95,10 @@ void setup_webpages(void)
     request->send(SPIFFS, "/termo.html", String(), false, processor);
   });
 
-
+        // Route for root / web page
+  // server.on("/loading.gif", HTTP_GET, [](AsyncWebServerRequest *request){
+  //   request->send(SPIFFS, "/loading.gif", "image/png", false, processor);
+  // });
 
   // Start server
   server.begin();
@@ -101,15 +111,15 @@ void initWebSocket() {
 
 String processor(const String& var){
   Serial.print("processor: "); Serial.println(var);
-  ws.textAll(String(ledState));
-  if(var == "STATE"){
-    if (ledState){
-      return "ON";
-    }
-    else{
-      return "OFF";
-    }
-  }
+  // ws.textAll(String(ledState));
+  // if(var == "STATE"){
+  //   if (ledState){
+  //     return "ON";
+  //   }
+  //   else{
+  //     return "OFF";
+  //   }
+  // }
   return String();
 }
 
@@ -122,6 +132,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
       ws.text(client->id(), get_zone_names());
       break;
     case WS_EVT_DISCONNECT:
+      pair_request_flag = 0;
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
@@ -138,7 +149,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
 
-    handle_host_message((char *)data, len);
+    handle_browser_message((char *)data, len);
 
     if (strcmp((char*)data, "toggle") == 0) {
       ledState = !ledState;

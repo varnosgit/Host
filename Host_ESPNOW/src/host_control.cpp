@@ -6,7 +6,8 @@ extern uint8_t pair_request_flag, globalZoneID;
 extern const uint8_t numOfMaxZones;
 extern systemZone zones[];;
 hc_message hc_mesg;
-uint8_t hc_sendFlag = 0, hc_recvFlag = 0;
+extern uint8_t hc_sendFlag, hc_recvFlag;
+extern IPAddress localIp;
 
 
 
@@ -29,13 +30,6 @@ bool receive_data_from_controller(void)
       delay(10);  
       char* rxdata = (char*) &hc_mesg;
       Serial2.read(rxdata, sizeof(hc_mesg));
-      Serial2.flush();
-      Serial.printf("reciever MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
-          hc_mesg.reciever_MAC_addr[0], hc_mesg.reciever_MAC_addr[1], hc_mesg.reciever_MAC_addr[2], 
-          hc_mesg.reciever_MAC_addr[3], hc_mesg.reciever_MAC_addr[4], hc_mesg.reciever_MAC_addr[5]); 
-      Serial.printf("sender MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
-          hc_mesg.sender_MAC_addr[0], hc_mesg.sender_MAC_addr[1], hc_mesg.sender_MAC_addr[2], 
-          hc_mesg.sender_MAC_addr[3], hc_mesg.sender_MAC_addr[4], hc_mesg.sender_MAC_addr[5]); 
       return true;
     }
     return false;
@@ -43,42 +37,79 @@ bool receive_data_from_controller(void)
 
 void handle_controller_message(void) 
 {
-    if (hc_mesg.__hcdata == 0x03) // 3 = cont.: this is a message from a device (sender mac address)
-    {
-        if (hc_mesg._command == 0x01) //a device requests to be paired
-        {
-            if (pair_request_flag == 1) // user is searching for a new device
-            {
-                //////////////////////////////////////////////// save new device on flash & database
-                add_device_to_zone(globalZoneID, hc_mesg._sender , hc_mesg.sender_MAC_addr);
-                ////////////////////////////////////////////// notify controller and device
-                hc_mesg.__hcdata = 4; // 4 = host: pair a device with sender MAC Add
-                hc_sendFlag = 1;
-                /////////////////////////////////////// notify browser
-                char buf[100]; 
-                uint8_t* tempo = hc_mesg.sender_MAC_addr;
-                String devModelWeb = "./vent.html"; 
-                if (hc_mesg._sender == 2) devModelWeb = "./termo.html";
-                snprintf(buf, 100, "Add Device, %02X:%02X:%02X:%02X:%02X:%02X,./termo.html,ventName",
-                            tempo[0], tempo[1], tempo[2], tempo[3], tempo[4], tempo[5]); 
-                String newDev = String(buf);
-                Serial.println("");
-                Serial.println(newDev);
-                notifyClients_txt(newDev);
-                pair_request_flag = 0;
-                //////////////////////////////////////////////////////
-            }
-        } 
-    }
     hc_recvFlag = 0;
+    if (hc_mesg.begin_validator[0] == 'V' & hc_mesg.begin_validator[1] == 'A' & hc_mesg.begin_validator[2] == 'C' &
+        hc_mesg.end_validator == 'H')
+    {
+        if (hc_mesg.__hcdata == 0x01) // 1 = introduce controller
+        {
+            hc_mesg.__hcdata = 0x02;
+            hc_mesg.reciever_MAC_addr[0] = localIp[0];
+            hc_mesg.reciever_MAC_addr[1] = localIp[1];
+            hc_mesg.reciever_MAC_addr[2] = localIp[2];
+            hc_mesg.reciever_MAC_addr[3] = localIp[3];
+
+            Serial.printf("Controller MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
+            hc_mesg.sender_MAC_addr[0], hc_mesg.sender_MAC_addr[1], hc_mesg.sender_MAC_addr[2], 
+            hc_mesg.sender_MAC_addr[3], hc_mesg.sender_MAC_addr[4], hc_mesg.sender_MAC_addr[5]); 
+            hc_sendFlag = 1;
+        }
+        else if (hc_mesg.__hcdata == 0x03) // 3 = cont.: this is a message from a device (sender mac address)
+        {
+            Serial.printf("reciever MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
+            hc_mesg.reciever_MAC_addr[0], hc_mesg.reciever_MAC_addr[1], hc_mesg.reciever_MAC_addr[2], 
+            hc_mesg.reciever_MAC_addr[3], hc_mesg.reciever_MAC_addr[4], hc_mesg.reciever_MAC_addr[5]); 
+            Serial.printf("sender MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
+            hc_mesg.sender_MAC_addr[0], hc_mesg.sender_MAC_addr[1], hc_mesg.sender_MAC_addr[2], 
+            hc_mesg.sender_MAC_addr[3], hc_mesg.sender_MAC_addr[4], hc_mesg.sender_MAC_addr[5]); 
+
+            if (hc_mesg._command == 0x01) //a device requests to be paired
+            {
+                if (pair_request_flag == 1) // user is searching for a new device
+                {
+                    //////////////////////////////////////////////// save new device on flash & database
+                    uint8_t dev_type = 0; 
+                    String dev_name;
+                    dev_name = add_device_to_zone(globalZoneID, hc_mesg._sender , hc_mesg.sender_MAC_addr);
+                    if (dev_name != "no name")
+                    {
+                        ////////////////////////////////////////////// notify controller and device
+                        hc_mesg.__hcdata = 4; // 4 = host: pair a device with sender MAC Add
+                        hc_sendFlag = 1;
+                        /////////////////////////////////////// notify browser
+                        // char buf[100]; 
+                        // uint8_t* tempo = hc_mesg.sender_MAC_addr;
+                        // String devModelWeb = "./vent.html"; 
+                        // if (hc_mesg._sender == 2) devModelWeb = "./termo.html";
+                        // // snprintf(buf, 100, "Add Device, %02X:%02X:%02X:%02X:%02X:%02X,./termo.html,ventName",
+                        // //             tempo[0], tempo[1], tempo[2], tempo[3], tempo[4], tempo[5]); 
+                        // snprintf(buf, 100, "Add Device, %02X:%02X:%02X:%02X:%02X:%02X,./termo.html,ventName",
+                        //             tempo[0], tempo[1], tempo[2], tempo[3], tempo[4], tempo[5]); 
+                        // String newDev = String(buf);
+                        // Serial.println("");
+                        // Serial.println(newDev);
+
+                        String newDev = "Add Device," + dev_name; Serial.println(newDev);
+                        notifyClients_txt(newDev);
+                        pair_request_flag = 0;
+                    }    
+                    //////////////////////////////////////////////////////
+                }
+            } 
+        }
+    }
+    else
+    {
+      Serial.println("Unknow data from controller!!! WTF");
+      Serial2.read();
+    }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-void handle_host_message(char *data, size_t len)
+void handle_browser_message(char *data, size_t len)
 {
     Serial.print("data from browser: ");Serial.printf((char *)data);Serial.println("");
-
     String mydata = String(data);
     String strs[20];
     int StringCount = 0;

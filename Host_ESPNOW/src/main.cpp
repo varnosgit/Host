@@ -13,8 +13,7 @@
 
 
 extern hc_message hc_mesg;
-extern uint8_t hc_sendFlag;
-extern uint8_t hc_recvFlag;
+uint8_t hc_sendFlag = 0, hc_recvFlag = 0;
 
 extern AsyncWebServer server;
 extern AsyncWebSocket ws;
@@ -37,7 +36,6 @@ void coreZEROTasks_code( void * parameter) {
 void setup(){
   //////////////////////////////////////////// inits
   Serial.begin(115200);  
-  Serial2.begin(115200);
   SPIFFS.begin(true); 
   ////////////////////////////////////////// defualt values
   Serial.print("Initializing...");
@@ -56,7 +54,8 @@ void setup(){
                   NULL,           /* parameter of the task */
                   1,              /* priority of the task */
                   &CoreZEROTasks, /* Task handle to keep track of created task */
-                  0);   
+                  0);  
+Serial2.begin(115200); 
 }
 
 int clean_counter = 0; 

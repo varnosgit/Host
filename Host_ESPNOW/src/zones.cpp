@@ -1,6 +1,10 @@
 #include "zones.h"
+#include "host_control.h"
 #include "FS.h"
 #include "SPIFFS.h"
+
+extern hc_message hc_mesg;
+extern uint8_t hc_sendFlag, hc_recvFlag;
 
 uint8_t pair_request_flag = 0, globalZoneID;
 const uint8_t numOfMaxZones = 20;
@@ -41,12 +45,11 @@ void zone_reload(void)
     ///////////////////////////////////////////////////// flash zone file read
     //writeFile(SPIFFS, "/zones.txt", (char *)zonesAddr);
     readFile(SPIFFS, "/zones.txt");
-
     if (strcmp(zones[0].name, "Main Room") != 0) //no main room available
     {
         zones[0].isActive = true;    
         strcpy(zones[0].name, "Main Room");
-        strcpy(zones[0].icon, "ssss Room");
+        strcpy(zones[0].icon, "icon MRoom");
         writeFile(SPIFFS, "/zones.txt", (char *)zonesAddr);
     }
 }
@@ -92,6 +95,24 @@ uint8_t delete_zone(String name)
             {   
                 Serial.println("A zone has been deleted succesfully!");
                 zones[i].isActive = false;
+                for (int j=0; j<10;j++)
+                {
+                    if (zones[i].termos[j].isActive == 1)
+                    {
+                        zones[i].termos[j].isActive = 0;
+                        // send unpair command ????
+                        // hc_mesg.__hcdata = 5; // 5 = host: unpair this device with reciever MAC Add if any
+                        // for (int k=0; k<6; k++)
+                        //     hc_mesg.reciever_MAC_addr[k] = zones[i].termos[j].MAC_addr[k];
+                        // hc_sendFlag = 1;
+                        // while (hc_sendFlag);                        
+                    }
+                    if (zones[i].vents[j].isActive == 1)
+                    {
+                        zones[i].vents[j].isActive = 0;
+                        // send unpair command ????
+                    }
+                }
                 writeFile(SPIFFS, "/zones.txt", (char *)zonesAddr);
                 return i;
             }
@@ -105,16 +126,19 @@ uint8_t get_zoneID_by_name(String zone_name)
     zone_name.toCharArray(temp, 16);
     for (int i=0; i<numOfMaxZones; i++)
     {
-        if (strcmp(zones[i].name, temp) != 0) //same name
+        if (String(zones[i].name) == zone_name) //same name
         {
+            Serial.print("zone id from name: "); Serial.println(i);
             return i;
         }
     }
-    return 0;
+    Serial.print("zone id from name: "); Serial.println(255);
+    return 255;
 }
 
-uint8_t add_device_to_zone(uint8_t zoneID, uint8_t devModel, uint8_t *devMAC)
+String add_device_to_zone(uint8_t zoneID, uint8_t devModel, uint8_t *devMAC)
 {
+    String dev_name = "no name";
     for (int i=0;i<10; i++)
     {
         if (devModel == 2) //termostat
@@ -122,13 +146,11 @@ uint8_t add_device_to_zone(uint8_t zoneID, uint8_t devModel, uint8_t *devMAC)
             if (zones[zoneID].termos[i].isActive == 0) //empty position
             {
                 zones[zoneID].termos[i].isActive = 1;
-                strncpy((char *)zones[zoneID].termos[i].MAC_addr, (const char *)devMAC, 6);
-                strncpy((char *)zones[zoneID].termos[i].name, "Termo1", 6);
-                Serial.println("termo name: ******************************");
-                Serial.println(String((char *)zones[zoneID].termos[i].name));
-                Serial.println(String((char *)devMAC));
-                Serial.println(devMAC[1]);
-                Serial.println(zones[zoneID].termos[i].name[1]);
+                zones[zoneID].termos[i].name[10] = i + '0';
+                dev_name = String(zones[zoneID].termos[i].name);
+                for (int j=0; j<6; j++)
+                    zones[zoneID].termos[i].MAC_addr[j] = devMAC[j];        
+                break;
             }
         }
         else if (devModel == 3) //vent
@@ -136,14 +158,24 @@ uint8_t add_device_to_zone(uint8_t zoneID, uint8_t devModel, uint8_t *devMAC)
             if (zones[zoneID].vents[i].isActive == 0) //empty position
             {
                 zones[zoneID].vents[i].isActive = 1;
-                strncpy((char *)zones[zoneID].vents[i].MAC_addr, (char *)devMAC, 6);
-                strncpy((char *)zones[zoneID].vents[i].name, (char *)devMAC, 6);
+                zones[zoneID].vents[i].name[5] = i + '0';
+                dev_name = String(zones[zoneID].termos[i].name);
+                for (int j=0; j<6; j++)
+                    zones[zoneID].vents[i].MAC_addr[j] = devMAC[j];   
+                break;    
             }
         }
+    }
+    if (dev_name != "no name")
+    {
         writeFile(SPIFFS, "/zones.txt", (char *)zonesAddr);
         Serial.println("A dev added to a zone succesfully!");
-        return 1;
     }
+    else
+    {
+        Serial.println("Can not add new device!");
+    }
+    return dev_name;
 }
 
 String get_zoen_device_names(uint8_t zoneID)
@@ -151,13 +183,13 @@ String get_zoen_device_names(uint8_t zoneID)
     String names = "Device Names";
     for (int i=0;i<10; i++)
     {
-        zones[zoneID].termos[3].isActive = 1;
-        zones[zoneID].termos[3].name[0] = 'A';
-        if (zones[zoneID].termos[i].isActive) names += "," + String(zones[zoneID].termos[i].name);
+        if (zones[zoneID].termos[i].isActive) {
+            names+="," + String(zones[zoneID].termos[i].name);
+        }
     }
     for (int i=0;i<10; i++)
     {
-        if (zones[zoneID].vents[i].isActive) names += "," + String(zones[zoneID].vents[i].name);
+        if (zones[zoneID].vents[i].isActive) names+="," + String(zones[zoneID].vents[i].name);
     }
     return names;
 }
