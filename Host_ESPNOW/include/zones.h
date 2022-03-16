@@ -33,5 +33,8 @@ String get_zone_names(void);
 uint8_t add_new_zone(String name, String icon);
 uint8_t delete_zone(String name);
 uint8_t get_zoneID_by_name(String zone_name);
+
 String add_device_to_zone(uint8_t zoneID, uint8_t devModel, uint8_t *devMAC);
 String get_zoen_device_names(uint8_t zoneID);
+
+uint8_t get_DeviceID_by_name(int zoneID, String dev_name);

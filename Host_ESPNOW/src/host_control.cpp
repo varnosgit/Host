@@ -2,14 +2,15 @@
 #include "zones.h"
 #include "wireless_host.h"
 
-extern uint8_t pair_request_flag, globalZoneID;
+extern uint8_t pair_request_flag;
+extern uint8_t globalZoneID, globalDeviceID;
 extern const uint8_t numOfMaxZones;
 extern systemZone zones[];;
 hc_message hc_mesg;
 extern uint8_t hc_sendFlag, hc_recvFlag;
 extern IPAddress localIp;
 
-
+uint8_t controller_MAC[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};  
 
 // this 3 below functions must run on the second core
 void send_data_to_controller(void)
@@ -35,12 +36,31 @@ bool receive_data_from_controller(void)
     return false;
 }
 
+void print_hcMessage(void)
+{
+    Serial.printf("reciever MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
+    hc_mesg.reciever_MAC_addr[0], hc_mesg.reciever_MAC_addr[1], hc_mesg.reciever_MAC_addr[2], 
+    hc_mesg.reciever_MAC_addr[3], hc_mesg.reciever_MAC_addr[4], hc_mesg.reciever_MAC_addr[5]); 
+    Serial.printf("sender MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
+    hc_mesg.sender_MAC_addr[0], hc_mesg.sender_MAC_addr[1], hc_mesg.sender_MAC_addr[2], 
+    hc_mesg.sender_MAC_addr[3], hc_mesg.sender_MAC_addr[4], hc_mesg.sender_MAC_addr[5]);
+
+    Serial.print(" * __hcdata: ");      Serial.println(hc_mesg.__hcdata);
+    Serial.print(" * _sender: ");       Serial.println(hc_mesg._sender);
+    Serial.print(" * _command: ");      Serial.println(hc_mesg._command);
+    Serial.print(" * temprature: ");    Serial.println(hc_mesg.temprature);
+    Serial.print(" * batStat: ");       Serial.println(hc_mesg.batStat);
+    Serial.print(" * fanStatus: ");     Serial.println(hc_mesg.fanStatus);
+    Serial.print(" * setPoint_temp: "); Serial.println(hc_mesg.setPoint_temp);
+    Serial.print(" * ventStatus: ");    Serial.println(hc_mesg.ventStatus);
+}
 void handle_controller_message(void) 
 {
     hc_recvFlag = 0;
     if (hc_mesg.begin_validator[0] == 'V' & hc_mesg.begin_validator[1] == 'A' & hc_mesg.begin_validator[2] == 'C' &
         hc_mesg.end_validator == 'H')
     {
+        print_hcMessage();
         if (hc_mesg.__hcdata == 0x01) // 1 = introduce controller
         {
             hc_mesg.__hcdata = 0x02;
@@ -49,24 +69,18 @@ void handle_controller_message(void)
             hc_mesg.reciever_MAC_addr[2] = localIp[2];
             hc_mesg.reciever_MAC_addr[3] = localIp[3];
 
+            for (int i=0; i<6; i++)  controller_MAC[i] = hc_mesg.sender_MAC_addr[i];
             Serial.printf("Controller MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
-            hc_mesg.sender_MAC_addr[0], hc_mesg.sender_MAC_addr[1], hc_mesg.sender_MAC_addr[2], 
-            hc_mesg.sender_MAC_addr[3], hc_mesg.sender_MAC_addr[4], hc_mesg.sender_MAC_addr[5]); 
+            controller_MAC[0], controller_MAC[1], controller_MAC[2], controller_MAC[3], controller_MAC[4], controller_MAC[5]); 
             hc_sendFlag = 1;
         }
         else if (hc_mesg.__hcdata == 0x03) // 3 = cont.: this is a message from a device (sender mac address)
         {
-            Serial.printf("reciever MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
-            hc_mesg.reciever_MAC_addr[0], hc_mesg.reciever_MAC_addr[1], hc_mesg.reciever_MAC_addr[2], 
-            hc_mesg.reciever_MAC_addr[3], hc_mesg.reciever_MAC_addr[4], hc_mesg.reciever_MAC_addr[5]); 
-            Serial.printf("sender MAC address is: %02X:%02X:%02X:%02X:%02X:%02X\n",
-            hc_mesg.sender_MAC_addr[0], hc_mesg.sender_MAC_addr[1], hc_mesg.sender_MAC_addr[2], 
-            hc_mesg.sender_MAC_addr[3], hc_mesg.sender_MAC_addr[4], hc_mesg.sender_MAC_addr[5]); 
-
             if (hc_mesg._command == 0x01) //a device requests to be paired
             {
                 if (pair_request_flag == 1) // user is searching for a new device
                 {
+                    pair_request_flag = 0;
                     //////////////////////////////////////////////// save new device on flash & database
                     uint8_t dev_type = 0; 
                     String dev_name;
@@ -91,11 +105,19 @@ void handle_controller_message(void)
 
                         String newDev = "Add Device," + dev_name; Serial.println(newDev);
                         notifyClients_txt(newDev);
-                        pair_request_flag = 0;
                     }    
                     //////////////////////////////////////////////////////
                 }
             } 
+            if (hc_mesg._command == 0x03) // read status
+            {
+                zones[globalZoneID].termos[globalDeviceID].setPoint = hc_mesg.setPoint_temp; 
+                String devices_stat = "Device Status,";
+                devices_stat = "Device Status," + String(hc_mesg.setPoint_temp);
+                Serial.println(devices_stat);
+                notifyClients_txt(devices_stat);
+
+            }
         }
     }
     else
@@ -132,7 +154,6 @@ void handle_browser_message(char *data, size_t len)
     for (int i = 0; i < StringCount; i++) {
         Serial.print(i);  Serial.print(": \"");    Serial.print(strs[i]);    Serial.println("\"");  }
 
-
     if (strs[0] == "Add New Zone")
     {
         Serial.println("adding new zone...");
@@ -143,7 +164,7 @@ void handle_browser_message(char *data, size_t len)
         Serial.println("deleting a zone...");
         delete_zone(strs[1]);
     }
-     if (strs[0] == "Search Device")
+    if (strs[0] == "Search Device")
     {
         Serial.println("search for paring a new device...");
         // write to controler ???
@@ -151,14 +172,58 @@ void handle_browser_message(char *data, size_t len)
         pair_request_flag = 1;
         globalZoneID = get_zoneID_by_name(strs[1]);
     }
-     if (strs[0] == "Zone Device Names")
+    if (strs[0] == "Zone Device Names")
     {   
         globalZoneID = get_zoneID_by_name(strs[1]);
         String devices_names;
         devices_names = get_zoen_device_names(globalZoneID);
         Serial.println(devices_names);
-        // String devices_names = "Device Names,v1,v2,v3,v5";
         notifyClients_txt(devices_names);
+    }
+    if (strs[0] == "Get Device now Status")
+    {   
+        globalZoneID = get_zoneID_by_name(strs[1]);
+        globalDeviceID = get_DeviceID_by_name(globalZoneID, strs[2]);
+        hc_mesg.__hcdata = 0x03; // host : send this message directly to device (reciver mac addr) 
+        hc_mesg._sender = 0x01;
+        hc_mesg._command = 0x03;
+        for (int i=0; i<6; i++){
+            hc_mesg.reciever_MAC_addr[i] = zones[globalZoneID].termos[globalDeviceID].MAC_addr[i];
+            hc_mesg.sender_MAC_addr[i] = controller_MAC[i];
+        }
+        hc_sendFlag = 1;
+    }
+    if (strs[0] == "Remove Device")
+    {   
+        globalZoneID = get_zoneID_by_name(strs[1]);
+        globalDeviceID = get_DeviceID_by_name(globalZoneID, strs[2]);
+        zones[globalZoneID].termos[globalDeviceID].isActive = 0;
+        hc_mesg.__hcdata = 0x04; // host : unpair devie
+        hc_mesg._sender = 0x01;
+        hc_mesg._command = 0x02;
+        for (int i=0; i<6; i++){
+            hc_mesg.reciever_MAC_addr[i] = zones[globalZoneID].termos[globalDeviceID].MAC_addr[i];
+            hc_mesg.sender_MAC_addr[i] = controller_MAC[i];
+        }
+        hc_sendFlag = 1;
+        Serial.println("send data for unpair a device");
+        print_hcMessage();
+    }
+    if (strs[0] == "Change Setpoint")
+    {   
+        globalZoneID = get_zoneID_by_name(strs[1]);
+        globalDeviceID = get_DeviceID_by_name(globalZoneID, strs[2]);
+        hc_mesg.__hcdata = 0x03; // host : send this message directly to device (reciver mac addr) 
+        hc_mesg._sender = 0x01;
+        hc_mesg._command = 0x02;
+        hc_mesg.setPoint_temp = strs[3].toInt();
+        for (int i=0; i<6; i++){
+            hc_mesg.reciever_MAC_addr[i] = zones[globalZoneID].termos[globalDeviceID].MAC_addr[i];
+            hc_mesg.sender_MAC_addr[i] = controller_MAC[i];
+        }
+        hc_sendFlag = 1;
+        Serial.println("send data to change setpoint");
+        print_hcMessage();
     }
     // hc_mesg.command = 0x03;
     // if (strcmp((char*)data, "auto") == 0) 

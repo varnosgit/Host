@@ -6,7 +6,8 @@
 extern hc_message hc_mesg;
 extern uint8_t hc_sendFlag, hc_recvFlag;
 
-uint8_t pair_request_flag = 0, globalZoneID;
+uint8_t pair_request_flag=0, status_request_flag=0;
+uint8_t globalZoneID, globalDeviceID;
 const uint8_t numOfMaxZones = 20;
 struct systemZone zones[numOfMaxZones];
 struct systemZone* zonesAddr = &zones[0];
@@ -133,6 +134,24 @@ uint8_t get_zoneID_by_name(String zone_name)
         }
     }
     Serial.print("zone id from name: "); Serial.println(255);
+    return 255;
+}
+uint8_t get_DeviceID_by_name(int zoneID, String dev_name)
+{
+    for (int i=0; i<10; i++)
+    {
+        if (String(zones[zoneID].termos[i].name) == dev_name) //same name
+        {
+            Serial.print("Device termostat id from name in zone: "); Serial.println(i);
+            return i;
+        }
+        if (String(zones[zoneID].vents[i].name) == dev_name) //same name
+        {
+            Serial.print("Device vent id from name in zone: "); Serial.println(i);
+            return i;
+        }
+    }
+    Serial.print("no device found"); Serial.println(255);
     return 255;
 }
 

@@ -3,7 +3,6 @@
 #include "host_control.h"
 #include "zones.h"
 
-
 //const char* ssid = "HUAWEI-2.4G-g4ci"; const char* password = "db7nf4dk";
 //const char* ssid = "artin123"; const char* password = "Smartartin123";
 const char* ssid = "Varnos5"; const char* password = "toolesag";
